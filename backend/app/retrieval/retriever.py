@@ -6,16 +6,17 @@ from backend.app.retrieval.vector_store import (
 def retrieve_jobs(
     query: str,
     limit: int = 20,
+    source: str | None = None,
+    location: str | None = None,
 ):
     """
     Retrieve jobs from Qdrant using semantic similarity.
 
-    Args:
-        query: Natural-language job search query.
-        limit: Maximum number of jobs to retrieve.
+    Supports:
 
-    Returns:
-        List of Qdrant search results.
+    - query
+    - source
+    - location
     """
 
     if not query or not query.strip():
@@ -24,6 +25,8 @@ def retrieve_jobs(
     results = semantic_search(
         query=query.strip(),
         limit=limit,
+        source=source,
+        location=location,
     )
 
     jobs = []
@@ -34,37 +37,73 @@ def retrieve_jobs(
 
         jobs.append(
             {
-                "id": payload.get("job_id"),
+                "id": payload.get(
+                    "job_id"
+                ),
+
                 "source_job_id": payload.get(
                     "source_job_id"
                 ),
-                "title": payload.get("title"),
-                "company": payload.get("company"),
-                "domain": payload.get("domain"),
-                "skills": payload.get("skills", []),
-                "roles": payload.get("roles", []),
-                "location": payload.get("location"),
-                "location_type": payload.get(
-                    "location_type", []
+
+                "source": payload.get(
+                    "source"
                 ),
+
+                "title": payload.get(
+                    "title"
+                ),
+
+                "company": payload.get(
+                    "company"
+                ),
+
+                "domain": payload.get(
+                    "domain"
+                ),
+
+                "skills": payload.get(
+                    "skills",
+                    [],
+                ),
+
+                "roles": payload.get(
+                    "roles",
+                    [],
+                ),
+
+                "location": payload.get(
+                    "location"
+                ),
+
+                "location_type": payload.get(
+                    "location_type",
+                    [],
+                ),
+
                 "employment_type": payload.get(
                     "employment_type"
                 ),
+
                 "schedule_type": payload.get(
                     "schedule_type"
                 ),
+
                 "min_experience": payload.get(
                     "min_experience"
                 ),
+
                 "max_experience": payload.get(
                     "max_experience"
                 ),
+
                 "min_salary": payload.get(
                     "min_salary"
                 ),
+
                 "max_salary": payload.get(
                     "max_salary"
                 ),
+
                 "similarity_score": result.score,
             }
         )

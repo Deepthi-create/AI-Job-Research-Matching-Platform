@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from collections import Counter
 
 
 # ============================================================
@@ -51,7 +52,7 @@ def index_jobs():
     try:
 
         # ----------------------------------------------------
-        # Create Qdrant collection
+        # CREATE QDRANT COLLECTION
         # ----------------------------------------------------
 
         create_collection()
@@ -59,7 +60,7 @@ def index_jobs():
         print("\nQdrant collection ready.")
 
         # ----------------------------------------------------
-        # Count total jobs
+        # COUNT TOTAL JOBS
         # ----------------------------------------------------
 
         total_jobs = (
@@ -73,7 +74,46 @@ def index_jobs():
         )
 
         # ----------------------------------------------------
-        # Counters
+        # SOURCE COUNTS
+        # ----------------------------------------------------
+
+        print("\nChecking job sources...")
+
+        source_rows = (
+            db.query(Job.source)
+            .all()
+        )
+
+        source_counter = Counter()
+
+        for row in source_rows:
+
+            source = row[0]
+
+            if source:
+                normalized_source = (
+                    str(source)
+                    .strip()
+                    .lower()
+                )
+            else:
+                normalized_source = "unknown"
+
+            source_counter[
+                normalized_source
+            ] += 1
+
+        print("\nJobs by source:")
+
+        for source, count in sorted(
+            source_counter.items()
+        ):
+            print(
+                f"  {source:<20} {count:,}"
+            )
+
+        # ----------------------------------------------------
+        # COUNTERS
         # ----------------------------------------------------
 
         indexed = 0
@@ -83,17 +123,10 @@ def index_jobs():
         # KEYSET PAGINATION
         # ----------------------------------------------------
         #
-        # Instead of:
-        #
-        # OFFSET 500
-        # OFFSET 1000
-        # OFFSET 1500
-        #
-        # we use:
-        #
         # WHERE id > last_id
         #
-        # This is more efficient for large datasets.
+        # This avoids OFFSET pagination and is more efficient
+        # for large datasets.
         # ----------------------------------------------------
 
         last_id = 0
@@ -101,19 +134,25 @@ def index_jobs():
         while True:
 
             # ------------------------------------------------
-            # Fetch next batch
+            # FETCH NEXT BATCH
             # ------------------------------------------------
 
             jobs = (
                 db.query(Job)
-                .filter(Job.id > last_id)
-                .order_by(Job.id)
-                .limit(DB_BATCH_SIZE)
+                .filter(
+                    Job.id > last_id
+                )
+                .order_by(
+                    Job.id
+                )
+                .limit(
+                    DB_BATCH_SIZE
+                )
                 .all()
             )
 
             # ------------------------------------------------
-            # No more jobs
+            # NO MORE JOBS
             # ------------------------------------------------
 
             if not jobs:
@@ -124,18 +163,56 @@ def index_jobs():
 
             print(
                 "\nProcessing database IDs "
-                f"{first_id:,} - {last_batch_id:,}"
+                f"{first_id:,} - "
+                f"{last_batch_id:,}"
             )
 
             # ------------------------------------------------
-            # Generate embeddings and upsert to Qdrant
+            # SHOW SOURCES IN CURRENT BATCH
+            # ------------------------------------------------
+
+            batch_sources = Counter()
+
+            for job in jobs:
+
+                if job.source:
+
+                    source = (
+                        str(job.source)
+                        .strip()
+                        .lower()
+                    )
+
+                else:
+
+                    source = "unknown"
+
+                batch_sources[source] += 1
+
+            print(
+                "Sources in this batch:"
+            )
+
+            for source, count in sorted(
+                batch_sources.items()
+            ):
+
+                print(
+                    f"  {source:<20} {count:,}"
+                )
+
+            # ------------------------------------------------
+            # GENERATE EMBEDDINGS
+            # AND UPSERT TO QDRANT
             # ------------------------------------------------
 
             try:
 
                 count = upsert_jobs(
                     jobs,
-                    embedding_batch_size=EMBEDDING_BATCH_SIZE,
+                    embedding_batch_size=(
+                        EMBEDDING_BATCH_SIZE
+                    ),
                 )
 
                 indexed += count
@@ -148,14 +225,20 @@ def index_jobs():
 
             except Exception as error:
 
-                print("\nERROR processing batch:")
+                print(
+                    "\nERROR processing batch:"
+                )
+
                 print(error)
 
                 # ------------------------------------------------
-                # If a batch fails, try each job individually.
-                # This prevents one bad record from stopping
-                # the entire indexing process.
+                # FALLBACK:
+                # PROCESS EACH JOB INDIVIDUALLY
                 # ------------------------------------------------
+
+                print(
+                    "\nTrying jobs individually..."
+                )
 
                 for job in jobs:
 
@@ -173,19 +256,27 @@ def index_jobs():
                         errors += 1
 
                         print(
-                            f"\nFailed job ID: {job.id}"
+                            f"\nFailed job ID: "
+                            f"{job.id}"
                         )
 
                         print(
-                            f"Title: {job.title}"
+                            f"Title: "
+                            f"{job.title}"
                         )
 
                         print(
-                            f"Error: {job_error}"
+                            f"Source: "
+                            f"{job.source}"
+                        )
+
+                        print(
+                            f"Error: "
+                            f"{job_error}"
                         )
 
                 print(
-                    f"\nRecovered from batch failure."
+                    "\nRecovered from batch failure."
                 )
 
                 print(
@@ -195,14 +286,14 @@ def index_jobs():
                 )
 
             # ------------------------------------------------
-            # Move to next batch
+            # MOVE TO NEXT BATCH
             # ------------------------------------------------
 
             last_id = last_batch_id
 
-        # ----------------------------------------------------
+        # ====================================================
         # FINAL SUMMARY
-        # ----------------------------------------------------
+        # ====================================================
 
         print("\n" + "=" * 70)
         print("VECTOR INDEXING COMPLETE")
@@ -223,7 +314,34 @@ def index_jobs():
             f"{errors:,}"
         )
 
+        # ----------------------------------------------------
+        # FINAL SOURCE SUMMARY
+        # ----------------------------------------------------
+
+        print("\nSource distribution:")
+
+        for source, count in sorted(
+            source_counter.items()
+        ):
+
+            print(
+                f"  {source:<20} {count:,}"
+            )
+
         print("=" * 70)
+
+        if errors == 0:
+
+            print(
+                "\nSUCCESS: All jobs were indexed."
+            )
+
+        else:
+
+            print(
+                f"\nWARNING: {errors} jobs "
+                f"could not be indexed."
+            )
 
     finally:
 

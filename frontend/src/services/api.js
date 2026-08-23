@@ -14,7 +14,7 @@ export async function searchJobs(params = {}) {
       value !== null &&
       value !== ""
     ) {
-      queryParams.append(key, value);
+      queryParams.append(key, String(value));
     }
   });
 
@@ -23,8 +23,10 @@ export async function searchJobs(params = {}) {
   );
 
   if (!response.ok) {
+    const errorText = await response.text();
+
     throw new Error(
-      `Failed to fetch jobs: ${response.status}`
+      `Failed to fetch jobs: ${response.status} ${errorText}`
     );
   }
 
@@ -38,6 +40,7 @@ export async function searchJobs(params = {}) {
 
 export async function semanticSearchJobs({
   query,
+  source = "",
   skill = "",
   location = "",
   experience = "",
@@ -45,16 +48,62 @@ export async function semanticSearchJobs({
 }) {
   const queryParams = new URLSearchParams();
 
-  queryParams.append("q", query);
-  queryParams.append("limit", limit);
+  // ----------------------------------------------------------
+  // SEARCH QUERY
+  // ----------------------------------------------------------
+
+  if (query) {
+    queryParams.append(
+      "q",
+      query.trim()
+    );
+  }
+
+  // ----------------------------------------------------------
+  // RESULT LIMIT
+  // ----------------------------------------------------------
+
+  queryParams.append(
+    "limit",
+    String(limit)
+  );
+
+  // ----------------------------------------------------------
+  // JOB SOURCE
+  // ----------------------------------------------------------
+
+  if (source) {
+    queryParams.append(
+      "source",
+      source.trim()
+    );
+  }
+
+  // ----------------------------------------------------------
+  // SKILL
+  // ----------------------------------------------------------
 
   if (skill) {
-    queryParams.append("skill", skill);
+    queryParams.append(
+      "skill",
+      skill.trim()
+    );
   }
 
+  // ----------------------------------------------------------
+  // LOCATION
+  // ----------------------------------------------------------
+
   if (location) {
-    queryParams.append("location", location);
+    queryParams.append(
+      "location",
+      location.trim()
+    );
   }
+
+  // ----------------------------------------------------------
+  // EXPERIENCE
+  // ----------------------------------------------------------
 
   if (
     experience !== "" &&
@@ -63,9 +112,13 @@ export async function semanticSearchJobs({
   ) {
     queryParams.append(
       "experience",
-      experience
+      String(experience)
     );
   }
+
+  // ----------------------------------------------------------
+  // API REQUEST
+  // ----------------------------------------------------------
 
   const response = await fetch(
     `${API_BASE_URL}/api/jobs/semantic-search?${queryParams.toString()}`
@@ -93,8 +146,17 @@ export async function assistantSearch({
 }) {
   const queryParams = new URLSearchParams();
 
-  queryParams.append("q", query);
-  queryParams.append("limit", limit);
+  if (query) {
+    queryParams.append(
+      "q",
+      query.trim()
+    );
+  }
+
+  queryParams.append(
+    "limit",
+    String(limit)
+  );
 
   const response = await fetch(
     `${API_BASE_URL}/api/assistant?${queryParams.toString()}`
@@ -122,8 +184,10 @@ export async function getJob(jobId) {
   );
 
   if (!response.ok) {
+    const errorText = await response.text();
+
     throw new Error(
-      `Failed to fetch job: ${response.status}`
+      `Failed to fetch job: ${response.status} ${errorText}`
     );
   }
 

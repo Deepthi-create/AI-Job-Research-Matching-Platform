@@ -4,6 +4,7 @@ import { semanticSearchJobs } from "../services/api";
 function Jobs() {
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
+  const [source, setSource] = useState("");
   const [skill, setSkill] = useState("");
   const [experience, setExperience] = useState("");
 
@@ -31,18 +32,54 @@ function Jobs() {
 
       const data = await semanticSearchJobs({
         query: query.trim(),
-        location,
-        skill,
+        location: location.trim(),
+        source: source.trim(),
+        skill: skill.trim(),
         experience,
         limit: 20,
       });
 
-      setJobs(data.results || []);
+      /*
+       * IMPORTANT:
+       *
+       * The backend semantic-search API is already responsible
+       * for applying the filters.
+       *
+       * DO NOT filter the results again here.
+       *
+       * Previously the frontend was doing:
+       *
+       * results.filter(job.source === selectedSource)
+       *
+       * The backend returns normalized source values such as:
+       *
+       * "linkedin"
+       * "naukri"
+       * "indeed"
+       * "internshala"
+       *
+       * while the frontend select contains:
+       *
+       * "LinkedIn"
+       * "Naukri"
+       * "Indeed"
+       * "Internshala"
+       *
+       * That second frontend filter could therefore remove valid
+       * backend results and display 0 jobs.
+       */
+
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+      setJobs(results);
     } catch (err) {
-      console.error(err);
+      console.error("Semantic search error:", err);
 
       setError(
-        err.message || "Something went wrong while searching."
+        err?.message ||
+          "Something went wrong while searching."
       );
 
       setJobs([]);
@@ -63,14 +100,26 @@ function Jobs() {
   // HELPERS
   // ============================================================
 
-  const getMatchScore = (job) =>
-    Math.round((job.final_score || 0) * 100);
+  const getMatchScore = (job) => {
+    const score =
+      job?.final_score ??
+      job?.similarity_score ??
+      0;
 
-  const getSemanticScore = (job) =>
-    ((job.similarity_score || 0) * 100).toFixed(1);
+    return Math.round(score * 100);
+  };
+
+  const getSemanticScore = (job) => {
+    const score =
+      job?.similarity_score ?? 0;
+
+    return (score * 100).toFixed(1);
+  };
 
   const getInitials = (company = "") => {
-    if (!company) return "AI";
+    if (!company) {
+      return "AI";
+    }
 
     return company
       .split(" ")
@@ -129,6 +178,7 @@ function Jobs() {
 
         .jobs-page {
           min-height: 100vh;
+
           background:
             radial-gradient(
               circle at 85% 5%,
@@ -251,7 +301,8 @@ function Jobs() {
         ==================================================== */
 
         .search-panel {
-          background: rgba(255, 255, 255, 0.94);
+          background:
+            rgba(255, 255, 255, 0.94);
 
           border:
             1px solid
@@ -355,6 +406,11 @@ function Jobs() {
 
         .experience-input {
           padding-left: 14px;
+        }
+
+        .source-select {
+          cursor: pointer;
+          appearance: auto;
         }
 
         .search-button {
@@ -1220,7 +1276,6 @@ function Jobs() {
 
       `}</style>
 
-
       {/* ======================================================
           MAIN CONTAINER
       ====================================================== */}
@@ -1301,6 +1356,47 @@ function Jobs() {
                 placeholder="Location"
                 className="search-input"
               />
+
+            </div>
+
+
+            {/* JOB SOURCE */}
+
+            <div className="search-field">
+
+              <span className="field-icon">
+                🌐
+              </span>
+
+              <select
+                value={source}
+                onChange={(event) =>
+                  setSource(event.target.value)
+                }
+                className="search-input source-select"
+              >
+
+                <option value="">
+                  All Sources
+                </option>
+
+                <option value="LinkedIn">
+                  LinkedIn
+                </option>
+
+                <option value="Naukri">
+                  Naukri
+                </option>
+
+                <option value="Indeed">
+                  Indeed
+                </option>
+
+                <option value="Internshala">
+                  Internshala
+                </option>
+
+              </select>
 
             </div>
 
@@ -1424,6 +1520,7 @@ function Jobs() {
 
               <p className="results-subtitle">
                 Ranked by AI relevance to your search
+                {source && ` • ${source}`}
               </p>
 
             </div>
@@ -1446,6 +1543,7 @@ function Jobs() {
             </div>
 
           </div>
+
         )}
 
 
@@ -1459,10 +1557,12 @@ function Jobs() {
 
             {[1, 2, 3, 4, 5, 6].map(
               (item) => (
+
                 <div
                   key={item}
                   className="skeleton"
                 />
+
               )
             )}
 
@@ -1492,7 +1592,7 @@ function Jobs() {
 
               <p className="empty-text">
                 Try changing your keywords,
-                location or skill.
+                location, skill or job source.
               </p>
 
             </div>
@@ -1521,7 +1621,6 @@ function Jobs() {
                 const matchStyle =
                   getMatchStyle(matchScore);
 
-
                 return (
 
                   <article
@@ -1546,7 +1645,6 @@ function Jobs() {
                             job.company
                           )}
                         </div>
-
 
                         <div
                           style={{
@@ -1575,8 +1673,10 @@ function Jobs() {
                         style={{
                           background:
                             matchStyle.background,
+
                           color:
                             matchStyle.color,
+
                           border:
                             matchStyle.border,
                         }}
@@ -1604,14 +1704,21 @@ function Jobs() {
                     <div className="job-meta">
 
                       <span className="meta-pill">
-                        📍
+                        📍{" "}
                         {job.location ||
                           "Location not specified"}
                       </span>
 
+                      {job.source && (
+                        <span className="meta-pill">
+                          🌐{" "}
+                          {job.source}
+                        </span>
+                      )}
+
                       {job.employment_type && (
                         <span className="meta-pill">
-                          💼
+                          💼{" "}
                           {job.employment_type}
                         </span>
                       )}
@@ -1636,7 +1743,7 @@ function Jobs() {
                         SKILLS
                     ======================================== */}
 
-                    {job.skills &&
+                    {Array.isArray(job.skills) &&
                       job.skills.length > 0 && (
 
                         <div className="skills-container">
@@ -1661,21 +1768,18 @@ function Jobs() {
                               )
                             )}
 
-
-                          {job.skills.length >
-                            6 && (
+                          {job.skills.length > 6 && (
 
                             <span className="more-pill">
                               +
-                              {job.skills.length -
-                                6}
+                              {job.skills.length - 6}
                             </span>
 
                           )}
 
                         </div>
 
-                      )}
+                    )}
 
 
                     {/* ========================================
