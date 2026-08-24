@@ -7,3 +7,4 @@ pydantic-settings
 ijson
 qdrant-client
 pypdf
+python-docx
