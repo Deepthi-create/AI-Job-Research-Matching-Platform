@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.core.database import Base
+from app.core.database import Base
 
 
 class Job(Base):

@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.api.routes.jobs import router as jobs_router
-from backend.app.api.routes.assistant import (
+from app.api.routes.jobs import router as jobs_router
+from app.api.routes.assistant import (
     router as assistant_router,
 )
-from backend.app.api.routes.recommendations import (
+from app.api.routes.recommendations import (
     router as recommendations_router,
 )
-from backend.app.api.resume import (
+from app.api.resume import (
     router as resume_router,
 )
 

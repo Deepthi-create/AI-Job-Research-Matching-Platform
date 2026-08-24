@@ -2,15 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from backend.app.core.database import get_db
-from backend.app.models.job import Job
-from backend.app.schemas.job import (
+from app.core.database import get_db
+from app.models.job import Job
+from app.schemas.job import (
     JobListResponse,
     JobResponse,
 )
 
-from backend.app.retrieval.retriever import retrieve_jobs
-from backend.app.retrieval.ranking import rank_jobs
+from app.retrieval.retriever import retrieve_jobs
+from app.retrieval.ranking import rank_jobs
 
 
 router = APIRouter(

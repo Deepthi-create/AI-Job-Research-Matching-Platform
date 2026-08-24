@@ -1,4 +1,4 @@
-from backend.app.retrieval.vector_store import (
+from app.retrieval.vector_store import (
     semantic_search,
 )
 
