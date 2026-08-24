@@ -58,7 +58,7 @@ function ResumeUpload() {
       formData.append("file", file);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/resume/upload",
+        "https://ai-powered-job-board-h1js.onrender.com/api/resume/upload",
         {
           method: "POST",
           body: formData,
