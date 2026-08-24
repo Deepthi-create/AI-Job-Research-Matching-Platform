@@ -782,20 +782,19 @@ Add screenshots of the application here.
 
 ### Jobs
 
-![Jobs Page](<img width="1904" height="1033" alt="{1171B73E-D702-4DA3-AEC2-2E77BD7D4AEA}" src="https://github.com/user-attachments/assets/07810194-addb-4a04-9e00-e162da852370" />
-)
+!<img width="1904" height="1033" alt="{1171B73E-D702-4DA3-AEC2-2E77BD7D4AEA}" src="https://github.com/user-attachments/assets/07810194-addb-4a04-9e00-e162da852370" />
 
 ### AI Job Assistant
 
-> Add AI Assistant screenshot here.
+!<img width="1917" height="1029" alt="{29E122B6-309F-432F-9D8F-22B7D8BFF264}" src="https://github.com/user-attachments/assets/4eb73992-9c1a-44ea-a3e1-719630388269" />
 
 ### Recommendations
 
-> Add Recommendations screenshot here.
+<img width="1916" height="1027" alt="{2C69EF24-95EC-4738-9335-A07CD2517352}" src="https://github.com/user-attachments/assets/f20ea470-3cde-4d5d-b167-4671bb803b9c" />
 
 ### Resume Match
 
-> Add Resume Match screenshot here.
+<img width="1917" height="1031" alt="{F7844EFE-9BD4-4C42-940C-AD756654BC91}" src="https://github.com/user-attachments/assets/475abc2c-c180-419e-b4e3-e0ad8752743f" />
 
 ---
 
