@@ -1,5 +1,13 @@
 # 🤖 AI Job Research & Matching Platform
 
+## 🚀 Live Demo
+
+🌐 **Deployed Application:**  
+https://ai-powered-job-board-frontend.onrender.com/
+
+🎥 **Project Demo Video:**  
+https://drive.google.com/file/d/1i8CVGvXOYMGFI4lQJN1vXZ4lRtVzazmw/view?usp=sharing
+
 An AI-powered job research and matching platform that helps users discover relevant job opportunities through **natural-language search, semantic matching, personalized recommendations, and resume-based job matching**.
 
 The platform combines a **React/Vite frontend**, **FastAPI backend**, **PostgreSQL**, and **Qdrant vector search** to provide an intelligent and personalized job discovery experience.
