@@ -8,3 +8,4 @@ ijson
 qdrant-client
 pypdf
 python-docx
+python-multipart
