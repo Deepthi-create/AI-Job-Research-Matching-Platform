@@ -782,7 +782,8 @@ Add screenshots of the application here.
 
 ### Jobs
 
-> Add Jobs page screenshot here.
+![Jobs Page](<img width="1904" height="1033" alt="{1171B73E-D702-4DA3-AEC2-2E77BD7D4AEA}" src="https://github.com/user-attachments/assets/07810194-addb-4a04-9e00-e162da852370" />
+)
 
 ### AI Job Assistant
 
