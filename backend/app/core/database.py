@@ -1,13 +1,26 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# ============================================================
+# PROJECT PATH
+# ============================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+
+# ============================================================
+# SETTINGS
+# ============================================================
+
 class Settings(BaseSettings):
     DATABASE_URL: str
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=PROJECT_ROOT / "backend" / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -16,9 +29,9 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-# ------------------------------------------------------------
-# Database Engine
-# ------------------------------------------------------------
+# ============================================================
+# DATABASE ENGINE
+# ============================================================
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -26,9 +39,9 @@ engine = create_engine(
 )
 
 
-# ------------------------------------------------------------
-# Database Session
-# ------------------------------------------------------------
+# ============================================================
+# DATABASE SESSION
+# ============================================================
 
 SessionLocal = sessionmaker(
     bind=engine,
@@ -37,16 +50,16 @@ SessionLocal = sessionmaker(
 )
 
 
-# ------------------------------------------------------------
-# SQLAlchemy Base
-# ------------------------------------------------------------
+# ============================================================
+# SQLALCHEMY BASE
+# ============================================================
 
 Base = declarative_base()
 
 
-# ------------------------------------------------------------
-# Database Dependency
-# ------------------------------------------------------------
+# ============================================================
+# DATABASE DEPENDENCY
+# ============================================================
 
 def get_db():
     db = SessionLocal()

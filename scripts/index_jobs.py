@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 from collections import Counter
 
@@ -8,9 +9,13 @@ from collections import Counter
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_ROOT = PROJECT_ROOT / "backend"
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
 
 # ============================================================
@@ -30,11 +35,27 @@ from backend.app.retrieval.vector_store import (
 # CONFIGURATION
 # ============================================================
 
-# Number of jobs loaded from PostgreSQL at a time
-DB_BATCH_SIZE = 500
+# Number of jobs loaded from PostgreSQL at a time.
+#
+# Reduced from 500 because the previous 500-job Qdrant
+# write operation timed out.
+DB_BATCH_SIZE = 25
 
-# Number of texts embedded together
-EMBEDDING_BATCH_SIZE = 64
+
+# Number of texts embedded together.
+#
+# Reduced from 64 to keep memory and request sizes smaller.
+EMBEDDING_BATCH_SIZE = 32
+
+
+# If a complete database batch fails, retry using these
+# smaller groups instead of processing hundreds of jobs
+# individually.
+RETRY_BATCH_SIZE = 5
+
+
+# Small pause between retry requests.
+RETRY_DELAY_SECONDS = 0.5
 
 
 # ============================================================
@@ -233,50 +254,119 @@ def index_jobs():
 
                 # ------------------------------------------------
                 # FALLBACK:
-                # PROCESS EACH JOB INDIVIDUALLY
+                # PROCESS SMALL RETRY BATCHES
+                # ------------------------------------------------
+                #
+                # The previous implementation tried every job
+                # individually after a batch timeout.
+                #
+                # That can result in hundreds of Qdrant requests
+                # and may appear to hang.
+                #
+                # Instead, retry in groups of 5.
                 # ------------------------------------------------
 
                 print(
-                    "\nTrying jobs individually..."
+                    "\nTrying smaller retry batches..."
                 )
 
-                for job in jobs:
+                for start_index in range(
+                    0,
+                    len(jobs),
+                    RETRY_BATCH_SIZE,
+                ):
+
+                    retry_jobs = jobs[
+                        start_index:
+                        start_index + RETRY_BATCH_SIZE
+                    ]
+
+                    retry_first_id = (
+                        retry_jobs[0].id
+                    )
+
+                    retry_last_id = (
+                        retry_jobs[-1].id
+                    )
+
+                    print(
+                        f"\nRetrying database IDs "
+                        f"{retry_first_id:,} - "
+                        f"{retry_last_id:,}"
+                    )
 
                     try:
 
-                        upsert_jobs(
-                            [job],
-                            embedding_batch_size=1,
+                        retry_count = upsert_jobs(
+                            retry_jobs,
+                            embedding_batch_size=(
+                                min(
+                                    EMBEDDING_BATCH_SIZE,
+                                    RETRY_BATCH_SIZE,
+                                )
+                            ),
                         )
 
-                        indexed += 1
-
-                    except Exception as job_error:
-
-                        errors += 1
+                        indexed += retry_count
 
                         print(
-                            f"\nFailed job ID: "
-                            f"{job.id}"
+                            f"Retry successful. "
+                            f"Indexed: "
+                            f"{indexed:,} / "
+                            f"{total_jobs:,}"
+                        )
+
+                    except Exception as retry_error:
+
+                        errors += len(retry_jobs)
+
+                        print(
+                            "\nFAILED retry batch:"
                         )
 
                         print(
-                            f"Title: "
-                            f"{job.title}"
-                        )
-
-                        print(
-                            f"Source: "
-                            f"{job.source}"
+                            f"Database IDs: "
+                            f"{retry_first_id:,} - "
+                            f"{retry_last_id:,}"
                         )
 
                         print(
                             f"Error: "
-                            f"{job_error}"
+                            f"{retry_error}"
                         )
 
+                        # ------------------------------------------------
+                        # SHOW FAILED JOB DETAILS
+                        # ------------------------------------------------
+
+                        for failed_job in retry_jobs:
+
+                            print(
+                                f"\nFailed job ID: "
+                                f"{failed_job.id}"
+                            )
+
+                            print(
+                                f"Title: "
+                                f"{failed_job.title}"
+                            )
+
+                            print(
+                                f"Source: "
+                                f"{failed_job.source}"
+                            )
+
+                    # ------------------------------------------------
+                    # SMALL DELAY BETWEEN QDRANT REQUESTS
+                    # ------------------------------------------------
+
+                    time.sleep(
+                        RETRY_DELAY_SECONDS
+                    )
+
                 print(
-                    "\nRecovered from batch failure."
+                    "\nCompleted recovery attempts "
+                    "for failed batch."
                 )
 
                 print(

@@ -2,7 +2,13 @@ from pathlib import Path
 import hashlib
 import math
 import re
+import os
 
+from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+load_dotenv(PROJECT_ROOT / "backend" / ".env")
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -16,7 +22,7 @@ from qdrant_client.models import (
 
 
 # ============================================================
-# CONFIGURATION
+# PROJECT PATH
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -25,7 +31,12 @@ if str(PROJECT_ROOT) not in __import__("sys").path:
     __import__("sys").path.insert(0, str(PROJECT_ROOT))
 
 
-QDRANT_PATH = PROJECT_ROOT / "data" / "qdrant"
+# ============================================================
+# QDRANT CONFIGURATION
+# ============================================================
+
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
 COLLECTION_NAME = "jobs"
 
@@ -42,20 +53,26 @@ _client = None
 
 def get_qdrant_client():
     """
-    Create and reuse a local persistent Qdrant client.
+    Create and reuse a Qdrant Cloud client.
     """
 
     global _client
 
     if _client is None:
 
-        QDRANT_PATH.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        if not QDRANT_URL:
+            raise ValueError(
+                "QDRANT_URL environment variable is not set."
+            )
+
+        if not QDRANT_API_KEY:
+            raise ValueError(
+                "QDRANT_API_KEY environment variable is not set."
+            )
 
         _client = QdrantClient(
-            path=str(QDRANT_PATH)
+            url=QDRANT_URL,
+            api_key=QDRANT_API_KEY,
         )
 
     return _client
