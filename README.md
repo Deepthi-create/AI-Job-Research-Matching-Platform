@@ -1,4 +1,4 @@
-# 🤖 AI Powered Job Board
+# 🤖 AI-Powered Job Board
 
 An AI-powered job research and matching platform that helps users discover relevant job opportunities through **natural-language search, semantic matching, personalized recommendations, and resume-based job matching**.
 
